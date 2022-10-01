@@ -4,13 +4,16 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class ServerManager : Singleton<ServerManager>
-{    
-    private readonly string server_address = "ws://localhost:8080";
+{
+    // TODO: handle ws/wss encryption?
+    private readonly string server_address = "wss://demo.piesocket.com/v3/channel_1?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV&notify_self";
 
     public ClientWebSocket raw_socket;
 
+    #region Low-level socket IO
     public async Task OpenWebsocket()
     {
         // If we don't already have an open socket, open one
@@ -49,15 +52,6 @@ public class ServerManager : Singleton<ServerManager>
         }
     }
 
-    public async Task ReportPlayerPosition(int player_id, float x, float y, float z)
-    {
-        var message = string.Format(
-            "{{\"id\":{0}, \"x\":{1},\"y\":{2},\"z\":{3}}}",
-            player_id, x, y, z
-        );
-        await SendData(message).ConfigureAwait(false);
-    }
-    
     private async Task SendData(string message)
     {
         // Open a socket if we don't have one
@@ -67,10 +61,24 @@ public class ServerManager : Singleton<ServerManager>
         // Send the message
         var buffer = Encoding.UTF8.GetBytes(message);
         await raw_socket.SendAsync(
-            new ArraySegment<byte>(buffer), 
-            WebSocketMessageType.Text, 
+            new ArraySegment<byte>(buffer),
+            WebSocketMessageType.Text,
             true,
             CancellationToken.None
         );
+        Debug.Log("Data sent!");
     }
+    #endregion
+
+    #region Public API methods for the game to interact with the server
+    public async Task ReportPlayerPosition(int player_id, float x, float y, float z)
+    {
+        var message = string.Format(
+            "{{\"id\":{0}, \"x\":{1},\"y\":{2},\"z\":{3}}}",
+            player_id, x, y, z
+        );
+        Debug.Log(message);
+        await SendData(message).ConfigureAwait(false);
+    }
+    #endregion
 }

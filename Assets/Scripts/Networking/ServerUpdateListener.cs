@@ -5,11 +5,12 @@ using UnityEngine;
 
 public class ServerUpdateListener : Singleton<ServerUpdateListener>
 {
-    void ProcessNewMessage(string full_message)
+    public void ProcessNewMessage(string full_message)
     {
         // TODO: implement deserializable ServerMessage class
         var message = JsonUtility.FromJson<ServerMessage>(full_message);
 
+        /*
         switch (message.type)
         {
             case "nearby_players":
@@ -20,11 +21,13 @@ public class ServerUpdateListener : Singleton<ServerUpdateListener>
                 Debug.Log("Unknown message type from server: " + message.type);
                 break;
         }
+        */
     }
 
     #region Update Types
-    void UpdateNearbyPlayers(object message_data)
+    private void UpdateNearbyPlayers(object message_data)
     {
+        /*
         foreach (object player_position in message_data)
         {
             var object_id = (int)player_position["id"];
@@ -35,6 +38,7 @@ public class ServerUpdateListener : Singleton<ServerUpdateListener>
 
             SyncManager.UpdateObjectPosition(object_id, position);
         }
+        */
     }
 
     #endregion
