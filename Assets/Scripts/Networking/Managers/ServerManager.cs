@@ -82,12 +82,14 @@ public class ServerManager : Singleton<ServerManager>
     #region Public API methods for the game to interact with the server
     public async Task ReportPlayerPosition(int player_id, float x, float y, float z)
     {
-        var message = string.Format(
-            "{{\"player_id\":{0}, \"x\":{1},\"y\":{2},\"z\":{3}}}",
-            player_id, x, y, z
-        );
-        Debug.Log(message);
-        await SendData(message).ConfigureAwait(false);
+        ClientMessage state = new ClientMessage();
+        state.player_id = player_id;
+        state.mine_id = 0;
+        state.player_position = new Vector3(x, y, z);
+
+        string json_state = JsonUtility.ToJson(state);
+        Debug.Log(json_state);
+        await SendData(json_state).ConfigureAwait(false);
     }
     #endregion
 }
