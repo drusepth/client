@@ -7,6 +7,11 @@ public class ServerPositionReporter : MonoBehaviour
 
     public int player_id = 0;
 
+    private void Start()
+    {
+        player_id = Random.Range(1, 10000);
+    }
+
     void FixedUpdate()
     {
         if (time_until_next_update <= 0f)

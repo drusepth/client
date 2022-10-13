@@ -66,7 +66,8 @@ public class ServerManager : Singleton<ServerManager>
             true,
             CancellationToken.None
         );
-        Debug.Log("Data sent!");
+        Debug.Log("Data sent:");
+        Debug.Log(message);
     }
     #endregion
 
@@ -74,7 +75,7 @@ public class ServerManager : Singleton<ServerManager>
     public async Task ReportPlayerPosition(int player_id, float x, float y, float z)
     {
         var message = string.Format(
-            "{{\"id\":{0}, \"x\":{1},\"y\":{2},\"z\":{3}}}",
+            "{{\"player_id\":{0}, \"x\":{1},\"y\":{2},\"z\":{3}}}",
             player_id, x, y, z
         );
         Debug.Log(message);

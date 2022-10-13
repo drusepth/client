@@ -5,41 +5,147 @@ using UnityEngine;
 
 public class ServerUpdateListener : Singleton<ServerUpdateListener>
 {
+    public Transform player;
+    public string local_player_id = null;
+
+    public GameObject nearby_player_prefab;
+
+    public void Start()
+    {
+        local_player_id = player.GetComponent<ServerPositionReporter>().player_id.ToString();
+    }
+
     public void ProcessNewMessage(string full_message)
     {
         // TODO: implement deserializable ServerMessage class
-        var message = JsonUtility.FromJson<ServerMessage>(full_message);
+        ServerGameState game_state = JsonUtility.FromJson<ServerGameState>(full_message);
 
+        #region Example game state API response
         /*
-        switch (message.type)
-        {
-            case "nearby_players":
-                UpdateNearbyPlayers(message.data);
-                break;
-
-            default:
-                Debug.Log("Unknown message type from server: " + message.type);
-                break;
-        }
+            Example game state:
+            {
+               "characters":{
+                  "2":{
+                     "player_id":2,
+                     "position":{
+                        "x_coordinate":31.319707165172915,
+                        "y_coordinate":72.94538403401285
+                     },
+                     "inventory":{
+            
+                     }
+                  },
+                  "1":{
+                     "player_id":1,
+                     "position":{
+                        "x_coordinate":1.0,
+                        "y_coordinate":1.0
+                     },
+                     "inventory":{
+            
+                     }
+                  }
+               },
+               "ore":{
+                  "3":{
+                     "ore_id":3,
+                     "ore_type":"SANDSTONE",
+                     "amount":1,
+                     "position":{
+                        "x_coordinate":49.75192387745273,
+                        "y_coordinate":48.914714319784004
+                     }
+                  },
+                  "2":{
+                     "ore_id":2,
+                     "ore_type":"CRYSTAL",
+                     "amount":1,
+                     "position":{
+                        "x_coordinate":50.3452697248149,
+                        "y_coordinate":49.35169625717146
+                     }
+                  },
+                  "1":{
+                     "ore_id":1,
+                     "ore_type":"CRYSTAL",
+                     "amount":2,
+                     "position":{
+                        "x_coordinate":50.0,
+                        "y_coordinate":50.0
+                     }
+                  },
+                  "4":{
+                     "ore_id":4,
+                     "ore_type":"IRON",
+                     "amount":2,
+                     "position":{
+                        "x_coordinate":49.804023924743056,
+                        "y_coordinate":48.945807143160344
+                     }
+                  },
+                  "5":{
+                     "ore_id":5,
+                     "ore_type":"DRAGONHIDE",
+                     "amount":1,
+                     "position":{
+                        "x_coordinate":50.70805107137224,
+                        "y_coordinate":48.65652471457309
+                     }
+                  }
+               }
+            }
         */
+        #endregion
+
+        // Update nearby players
+        foreach (var player_data in game_state.characters)
+        {
+            string player_id = player_data.Key;
+            ServerPlayerData data = player_data.Value;
+
+            if (player_id != local_player_id)
+                UpdateNearbyPlayer(FindOrCreateOtherPlayerById(player_id), data);
+        }
+        
+        // Update nearby objects
+        // TODO
     }
+
+    #region Helper Functions
+    public GameObject FindOrCreateOtherPlayerById(string player_id)
+    {
+        // Find the GameObject in the OtherPlayersPool with the matching player_id
+        GameObject found_player = null;
+        GameObject player_pool = GameObject.Find("OtherPlayersPool");
+        foreach (var position_reporter in player_pool.GetComponentsInChildren<ServerPositionReporter>())
+            if (position_reporter.player_id.ToString() == player_id)
+                return position_reporter.gameObject;
+
+        // If the player doesn't exist yet, create a new one
+        if (found_player == null)
+        {
+            found_player = Instantiate(nearby_player_prefab, Vector3.zero, Quaternion.identity);
+            found_player.GetComponent<ServerPositionReporter>().player_id = int.Parse(player_id);
+        }
+
+        return found_player;
+    }
+    #endregion
 
     #region Update Types
-    private void UpdateNearbyPlayers(object message_data)
+    private void UpdateNearbyPlayer(GameObject target, ServerPlayerData data)
     {
-        /*
-        foreach (object player_position in message_data)
-        {
-            var object_id = (int)player_position["id"];
-            var player_x = (float)player_position["x"];
-            var player_y = (float)player_position["y"];
-            var player_z = (float)player_position["z"];
-            var position = new Vector3(player_x, player_y, player_z);
-
-            SyncManager.UpdateObjectPosition(object_id, position);
-        }
-        */
+        UpdateObjectPosition(target, data.position);
     }
 
+    private void UpdateNearbyObject(GameObject target, ServerOreData data)
+    {
+        UpdateObjectPosition(target, data.position);
+    }
+
+    private void UpdateObjectPosition(GameObject target, Vector3 position)
+    {
+        target.transform.position = position;
+    }
     #endregion
 }

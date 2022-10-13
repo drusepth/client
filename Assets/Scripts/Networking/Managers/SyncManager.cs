@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+// deprecated
 public class SyncManager : Singleton<SyncManager>
 {
     public static void UpdateObjectPosition(int object_id, Vector3 position)
