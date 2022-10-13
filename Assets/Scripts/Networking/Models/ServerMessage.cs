@@ -4,8 +4,8 @@ using UnityEngine;
 [System.Serializable]
 class ServerGameState
 {
-    public Dictionary<string, ServerPlayerData> characters;
-    public Dictionary<string, ServerOreData> ore;
+    public List<ServerPlayerData> characters;
+    public List<ServerOreData> ore;
 }
 
 [System.Serializable]

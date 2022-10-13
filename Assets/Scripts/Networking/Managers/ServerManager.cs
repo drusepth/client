@@ -13,6 +13,14 @@ public class ServerManager : Singleton<ServerManager>
 
     public ClientWebSocket raw_socket;
 
+    public void FixedUpdate()
+    {
+        Debug.Log("Updating game state from server");
+        // ReadWebsocket();
+
+        ServerUpdateListener.Instance.ProcessNewMessage("");
+    }
+
     #region Low-level socket IO
     public async Task OpenWebsocket()
     {

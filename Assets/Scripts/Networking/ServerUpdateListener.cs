@@ -17,7 +17,9 @@ public class ServerUpdateListener : Singleton<ServerUpdateListener>
 
     public void ProcessNewMessage(string full_message)
     {
-        // TODO: implement deserializable ServerMessage class
+
+        full_message = "{\"characters\":[{\"player_id\":2,\"position\":{\"x\":31.319707165172915,\"y\":72.94538403401285},\"inventory\":{}},{\"player_id\":1,\"position\":{\"x\":1.0,\"y\":1.0},\"inventory\":{}}]}";
+
         ServerGameState game_state = JsonUtility.FromJson<ServerGameState>(full_message);
 
         #region Example game state API response
@@ -98,13 +100,12 @@ public class ServerUpdateListener : Singleton<ServerUpdateListener>
         #endregion
 
         // Update nearby players
-        foreach (var player_data in game_state.characters)
+        foreach (ServerPlayerData player_data in game_state.characters)
         {
-            string player_id = player_data.Key;
-            ServerPlayerData data = player_data.Value;
+            string player_id = player_data.player_id.ToString();
 
             if (player_id != local_player_id)
-                UpdateNearbyPlayer(FindOrCreateOtherPlayerById(player_id), data);
+                UpdateNearbyPlayer(FindOrCreateOtherPlayerById(player_id), player_data);
         }
         
         // Update nearby objects
@@ -126,6 +127,7 @@ public class ServerUpdateListener : Singleton<ServerUpdateListener>
         {
             found_player = Instantiate(nearby_player_prefab, Vector3.zero, Quaternion.identity);
             found_player.GetComponent<ServerPositionReporter>().player_id = int.Parse(player_id);
+            found_player.transform.parent = player_pool.transform;
         }
 
         return found_player;
