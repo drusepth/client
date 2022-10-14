@@ -1,4 +1,4 @@
-using System;
+using ServerMessages;
 using WebSocketSharp;
 using UnityEngine;
 
@@ -53,7 +53,7 @@ public class ServerInterface : Singleton<ServerInterface>
 
         if (web_socket.ReadyState == WebSocketState.Open)
         {
-            ClientMessage state = new()
+            ClientGameStateUpdate state = new()
             {
                 player_id = player_id,
                 mine_id = 0,

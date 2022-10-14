@@ -1,6 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using ServerMessages;
 using UnityEngine;
 
 public class ServerSyncManager : Singleton<ServerSyncManager>
