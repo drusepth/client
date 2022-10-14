@@ -4,7 +4,11 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
+using WebSocketSharp;
 using UnityEngine;
+using WebSocketState = System.Net.WebSockets.WebSocketState;
+using WebSocket = WebSocketSharp.WebSocket;
 
 public class ServerInterface : Singleton<ServerInterface>
 {
@@ -12,7 +16,7 @@ public class ServerInterface : Singleton<ServerInterface>
     private readonly string server_address = "ws://2.tcp.ngrok.io:15248/join_game";
 
     public ClientWebSocket raw_socket;
-    public WebSocket socket;
+    public WebSocket web_socket;
 
     // Process any updates from the server <3    
     //public async void FixedUpdate() {
@@ -21,10 +25,23 @@ public class ServerInterface : Singleton<ServerInterface>
 
     public void Start()
     {
+        SetUpWebsocket();
+    }
+
+    public void SetUpWebsocket()
+    {
+        web_socket = new WebSocket(server_address);
+
+        web_socket.OnMessage += (sender, d) =>
+        {
+            Debug.Log("Received message from server: " + d.Data);
+        };
+
+        web_socket.Connect();
     }
 
     #region Public API methods for the game to interact with the server
-    public async Task SendClientState(int player_id, float x, float y, float z)
+    public void SendClientState(int player_id, float x, float y, float z)
     {
         ClientMessage state = new()
         {
@@ -34,7 +51,16 @@ public class ServerInterface : Singleton<ServerInterface>
         };
 
         string json_state = JsonUtility.ToJson(state);
-        await SendData(json_state).ConfigureAwait(false);
+        try
+        {
+            web_socket.Send(json_state);
+        }
+        catch (NullReferenceException)
+        {
+            Debug.Log("null reference on sending state");
+            Debug.Log(json_state);
+        }        
+        Debug.Log("game state sent successfully!");
     }
     #endregion
 
@@ -94,8 +120,9 @@ public class ServerInterface : Singleton<ServerInterface>
         }
     }
 
-    private async Task SendData(string message)
+    private void SendMessageToServer(string message)
     {
+        /*
         // Open a socket if we don't have one
         if (raw_socket == null || raw_socket.State != WebSocketState.Open)
             await OpenWebsocket();
@@ -110,6 +137,7 @@ public class ServerInterface : Singleton<ServerInterface>
         );
         // Debug.Log("Data sent:");
         // Debug.Log(message);
+        */
     }
     #endregion
 }

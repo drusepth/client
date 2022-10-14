@@ -3,7 +3,7 @@ using UnityEngine;
 public class ServerPositionReporter : MonoBehaviour
 {
     public float update_frequency = 1f;
-    private float time_until_next_update = 0f;
+    private float time_until_next_update = 1f;
 
     public int player_id = 0;
 
@@ -21,15 +21,15 @@ public class ServerPositionReporter : MonoBehaviour
             time_until_next_update -= Time.fixedDeltaTime;
     }
 
-    async void SendPositionUpdate()
+    void SendPositionUpdate()
     {
         // Reset our update countdown timer
         time_until_next_update = update_frequency;
 
         // Debug.Log("Broadcasting position update to server");
-        await ServerInterface.Instance.SendClientState(
+        ServerInterface.Instance.SendClientState(
             player_id,
             transform.position.x, transform.position.y, transform.position.z
-        ).ConfigureAwait(false);
+        );
     }
 }
