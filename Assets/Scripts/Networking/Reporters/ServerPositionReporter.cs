@@ -2,14 +2,13 @@ using UnityEngine;
 
 public class ServerPositionReporter : MonoBehaviour
 {
-    public float update_frequency = 1f;
+    public float update_frequency = 0.1f;
     private float time_until_next_update = 1f;
 
     public int player_id = 0;
 
     private void Start()
     {
-        player_id = Random.Range(1, 10000);
         player_id = 1;
     }
 

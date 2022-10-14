@@ -1,4 +1,6 @@
 using ServerMessages;
+using System.Collections.Concurrent;
+using System.Threading;
 using UnityEngine;
 
 public class ServerSyncManager : Singleton<ServerSyncManager>
@@ -12,11 +14,32 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
     public void Start()
     {
         local_player_id = player.GetComponent<ServerPositionReporter>().player_id;
+
+        // Set up a shared queue with ServerInterface it can write to and we can read from
+        ServerInterface.Instance.incoming_server_messages = new ConcurrentQueue<string>();
+    }
+
+    public void FixedUpdate()
+    {
+        /*
+        if (should_blend_server_state)
+        {
+            // should_blend_server_state = false;
+            BlendGameState(latest_server_state_to_blend);
+        }
+        */
+
+        // Process any messages from the server
+        string server_message;
+        if (ServerInterface.Instance.incoming_server_messages.TryDequeue(out server_message))
+            ProcessServerMessage(server_message);
     }
 
     public void ProcessServerMessage(string full_message)
     {
-        // TODO we probably want to branch here on message_type:
+        Debug.Log("processing server message");
+
+        // TODO we probably want to logic branch here on message_type:
         // * authentication response
         // * game state blend updates
         // * messages from other players

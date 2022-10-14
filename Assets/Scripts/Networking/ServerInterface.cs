@@ -1,16 +1,21 @@
 using ServerMessages;
 using WebSocketSharp;
 using UnityEngine;
+using System.Collections.Concurrent;
 
 public class ServerInterface : Singleton<ServerInterface>
 {
-    private readonly string server_address = "ws://2.tcp.ngrok.io:15248/join_game";
+    private readonly string server_address = "ws://2.tcp.ngrok.io:16769/join_game";
 
     public WebSocket web_socket;
-    public LogLevel socket_loglevel = LogLevel.Debug;
+    public LogLevel socket_loglevel = LogLevel.Trace;
+
+    public ConcurrentQueue<string> incoming_server_messages;
 
     public void SetUpWebsocket()
     {
+        incoming_server_messages = new ConcurrentQueue<string>();
+        
         web_socket = new WebSocket(server_address);
         web_socket.EmitOnPing = true; // triggers OnMessage for ping events
         web_socket.Log.Level = socket_loglevel;
@@ -24,15 +29,27 @@ public class ServerInterface : Singleton<ServerInterface>
         {
             Debug.Log("Received message from server: " + e.Data);
             if (e.IsPing)
+            {
+                Debug.Log("got ping");
                 ServerSyncManager.Instance.ProcessServerPing();
+            }
             else
-                ServerSyncManager.Instance.ProcessServerMessage(e.Data);
+            {
+                Debug.Log("got game message");
+                Debug.Log(e.Data);
+                incoming_server_messages.Enqueue(e.Data);
+                Debug.Log(incoming_server_messages.Count + " messages to process");
+                // ServerSyncManager.Instance.ProcessServerMessage(e.Data);
+                Debug.Log("found singleton instance");
+            }
         };
 
+        /*
         web_socket.OnError += (sender, e) =>
         {
             Debug.Log($"#{e.Exception} error received from server: {e.Message}");
         };
+        */
 
         web_socket.OnClose += (sender, e) =>
         {
@@ -42,7 +59,7 @@ public class ServerInterface : Singleton<ServerInterface>
         // TODO we probably want to call this on game start instead of right before
         // sending client state, so we can use ConnectAsync (and not lock the main thread)
         // and just bank on it not being used immediately
-        web_socket.ConnectAsync();
+        web_socket.Connect();
     }
 
     #region Public API methods for the game to interact with the server
