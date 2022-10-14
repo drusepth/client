@@ -20,6 +20,8 @@ public class ServerInterface : Singleton<ServerInterface>
         web_socket.OnMessage += (sender, d) =>
         {
             Debug.Log("Received message from server: " + d.Data);
+            ServerGameState game_state = JsonUtility.FromJson<ServerGameState>(d.Data);
+            ServerSyncManager.Instance.BlendGameState(game_state);
         };
 
         web_socket.Connect();
@@ -47,5 +49,6 @@ public class ServerInterface : Singleton<ServerInterface>
         }        
         Debug.Log("game state sent successfully!");
     }
+
     #endregion
 }
