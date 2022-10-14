@@ -9,7 +9,7 @@ using UnityEngine;
 public class ServerInterface : Singleton<ServerInterface>
 {
     // TODO: handle ws/wss encryption?
-    private readonly string server_address = "wss://demo.piesocket.com/v3/channel_1?api_key=VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV&notify_self";
+    private readonly string server_address = "ws://4.tcp.ngrok.io:12862/join_game";
 
     public ClientWebSocket raw_socket;
 
@@ -34,6 +34,8 @@ public class ServerInterface : Singleton<ServerInterface>
     #region Low-level socket IO
     public async Task OpenWebsocket()
     {
+        Debug.Log("Trying to open websocket...");
+
         // If we don't already have an open socket, open one
         if (raw_socket == null || raw_socket.State != WebSocketState.Open)
         {
@@ -48,28 +50,37 @@ public class ServerInterface : Singleton<ServerInterface>
         if (raw_socket == null || raw_socket.State != WebSocketState.Open)
             await OpenWebsocket();
 
-        while (raw_socket.State == WebSocketState.Open)
+        try
         {
-            // Read from the socket until it closes
-            ArraySegment<byte> buffer = new ArraySegment<byte>(new Byte[8192]);
-
-            // Keep reading until we get an EndOfMessage flag on the buffer
-            using var memstream = new MemoryStream();
-            WebSocketReceiveResult result;
-            do
+            while (raw_socket.State == WebSocketState.Open)
             {
-                result = await raw_socket.ReceiveAsync(buffer, CancellationToken.None);
-                memstream.Write(buffer.Array, buffer.Offset, result.Count);
-            }
-            while (!result.EndOfMessage);
+                Debug.Log("Websocket is still open :)");
 
-            memstream.Seek(0, SeekOrigin.Begin);
-            if (result.MessageType == WebSocketMessageType.Text)
-            {
-                using var reader = new StreamReader(memstream, Encoding.UTF8);
-                var full_message = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, result.Count);
-                ServerUpdateListener.Instance.ProcessNewMessage(full_message);
+                // Read from the socket until it closes
+                ArraySegment<byte> buffer = new ArraySegment<byte>(new Byte[8192]);
+
+                // Keep reading until we get an EndOfMessage flag on the buffer
+                using var memstream = new MemoryStream();
+                WebSocketReceiveResult result;
+                do
+                {
+                    result = await raw_socket.ReceiveAsync(buffer, CancellationToken.None);
+                    memstream.Write(buffer.Array, buffer.Offset, result.Count);
+                }
+                while (!result.EndOfMessage);
+
+                memstream.Seek(0, SeekOrigin.Begin);
+                if (result.MessageType == WebSocketMessageType.Text)
+                {
+                    using var reader = new StreamReader(memstream, Encoding.UTF8);
+                    var full_message = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, result.Count);
+                    ServerUpdateListener.Instance.ProcessNewMessage(full_message);
+                }
             }
+        }
+        catch (InvalidOperationException)
+        {
+            Debug.Log("[WS] Tried to receive message while already reading one.");
         }
     }
 
@@ -87,8 +98,8 @@ public class ServerInterface : Singleton<ServerInterface>
             true,
             CancellationToken.None
         );
-        Debug.Log("Data sent:");
-        Debug.Log(message);
+        // Debug.Log("Data sent:");
+        // Debug.Log(message);
     }
     #endregion
 }

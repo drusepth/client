@@ -25,7 +25,7 @@ public class ServerPositionReporter : MonoBehaviour
         // Reset our update countdown timer
         time_until_next_update = update_frequency;
 
-        Debug.Log("Broadcasting position update to server");
+        // Debug.Log("Broadcasting position update to server");
         await ServerInterface.Instance.SendClientState(
             player_id,
             transform.position.x, transform.position.y, transform.position.z
