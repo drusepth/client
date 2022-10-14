@@ -7,13 +7,13 @@ public class ServerInterface : Singleton<ServerInterface>
     private readonly string server_address = "ws://2.tcp.ngrok.io:15248/join_game";
 
     public WebSocket web_socket;
-
-    public void Start() => SetUpWebsocket();
+    public LogLevel socket_loglevel = LogLevel.Debug;
 
     public void SetUpWebsocket()
     {
         web_socket = new WebSocket(server_address);
         web_socket.EmitOnPing = true; // triggers OnMessage for ping events
+        web_socket.Log.Level = socket_loglevel;
 
         web_socket.OnOpen += (sender, e) =>
         {
@@ -31,43 +31,45 @@ public class ServerInterface : Singleton<ServerInterface>
 
         web_socket.OnError += (sender, e) =>
         {
-            Debug.Log("Error received from server:");
-            Debug.Log(e.Message);
-            Debug.Log(e.Exception);
+            Debug.Log($"#{e.Exception} error received from server: {e.Message}");
         };
 
         web_socket.OnClose += (sender, e) =>
         {
-            Debug.Log("Websocket has been closed!");
-            Debug.Log("Code: " + e.Code);
-            Debug.Log("Reason: " + e.Reason);
+            Debug.Log($"Websocket has been closed! {e.Reason} ({e.Code})");
         };
 
-        web_socket.Connect();
+        // TODO we probably want to call this on game start instead of right before
+        // sending client state, so we can use ConnectAsync (and not lock the main thread)
+        // and just bank on it not being used immediately
+        web_socket.ConnectAsync();
     }
 
     #region Public API methods for the game to interact with the server
     public void SendClientState(int player_id, float x, float y, float z)
     {
-        ClientMessage state = new()
-        {
-            player_id = player_id,
-            mine_id = 0,
-            player_position = new Vector3(x, y, z)
-        };
+        if (web_socket == null)
+            SetUpWebsocket();
 
-        string json_state = JsonUtility.ToJson(state);
-        try
+        if (web_socket.ReadyState == WebSocketState.Open)
         {
+            ClientMessage state = new()
+            {
+                player_id = player_id,
+                mine_id = 0,
+                player_position = new Vector3(x, y, z)
+            };
+
+            string json_state = JsonUtility.ToJson(state);
             // TODO we should probably switch to SendAsync since we don't need an ACK here
             web_socket.Send(json_state);
+            Debug.Log("game state sent successfully!");
         }
-        catch (NullReferenceException)
+        else
         {
-            Debug.Log("null reference on sending state");
-            Debug.Log(json_state);
-        }        
-        Debug.Log("game state sent successfully!");
+            // TODO queue a most recent state to send if there are internet hiccups?
+            Debug.Log("Websocket state is not open, so we cannot send state.");
+        }
     }
     #endregion
 
