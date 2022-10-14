@@ -16,6 +16,23 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
         local_player_id = player.GetComponent<ServerPositionReporter>().player_id;
     }
 
+    public void ProcessServerMessage(string full_message)
+    {
+        // TODO we probably want to branch here on message_type:
+        // * authentication response
+        // * game state blend updates
+        // * messages from other players
+        // * items added/removed from inventory, etc
+
+        ServerGameState game_state = JsonUtility.FromJson<ServerGameState>(full_message);
+        BlendGameState(game_state);
+    }
+
+    public void ProcessServerPing()
+    {
+        Debug.Log("Received PING from server -- we're still connected!");
+    }
+
     // Rather than loading a game state from scratch, this adds/updates all the data in
     // game_state into our current game state
     public void BlendGameState(ServerGameState game_state)

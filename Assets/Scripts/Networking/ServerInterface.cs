@@ -8,20 +8,39 @@ public class ServerInterface : Singleton<ServerInterface>
 
     public WebSocket web_socket;
 
-    public void Start()
-    {
-        SetUpWebsocket();
-    }
+    public void Start() => SetUpWebsocket();
 
     public void SetUpWebsocket()
     {
         web_socket = new WebSocket(server_address);
+        web_socket.EmitOnPing = true; // triggers OnMessage for ping events
 
-        web_socket.OnMessage += (sender, d) =>
+        web_socket.OnOpen += (sender, e) =>
         {
-            Debug.Log("Received message from server: " + d.Data);
-            ServerGameState game_state = JsonUtility.FromJson<ServerGameState>(d.Data);
-            ServerSyncManager.Instance.BlendGameState(game_state);
+            AttemptAuthenticationAs("player name");
+        };
+
+        web_socket.OnMessage += (sender, e) =>
+        {
+            Debug.Log("Received message from server: " + e.Data);
+            if (e.IsPing)
+                ServerSyncManager.Instance.ProcessServerPing();
+            else
+                ServerSyncManager.Instance.ProcessServerMessage(e.Data);
+        };
+
+        web_socket.OnError += (sender, e) =>
+        {
+            Debug.Log("Error received from server:");
+            Debug.Log(e.Message);
+            Debug.Log(e.Exception);
+        };
+
+        web_socket.OnClose += (sender, e) =>
+        {
+            Debug.Log("Websocket has been closed!");
+            Debug.Log("Code: " + e.Code);
+            Debug.Log("Reason: " + e.Reason);
         };
 
         web_socket.Connect();
@@ -40,6 +59,7 @@ public class ServerInterface : Singleton<ServerInterface>
         string json_state = JsonUtility.ToJson(state);
         try
         {
+            // TODO we should probably switch to SendAsync since we don't need an ACK here
             web_socket.Send(json_state);
         }
         catch (NullReferenceException)
@@ -49,6 +69,13 @@ public class ServerInterface : Singleton<ServerInterface>
         }        
         Debug.Log("game state sent successfully!");
     }
+    #endregion
 
+    #region Private API methods for the game to interact with the server
+    private void AttemptAuthenticationAs(string username)
+    {
+        // TODO send our username (and password?) to server
+        // TODO get back a player_id to set (handled by message-receive tho)
+    }
     #endregion
 }
