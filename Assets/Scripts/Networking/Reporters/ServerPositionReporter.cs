@@ -10,6 +10,7 @@ public class ServerPositionReporter : MonoBehaviour
     private void Start()
     {
         player_id = Random.Range(1, 10000);
+        player_id = 1;
     }
 
     void FixedUpdate()

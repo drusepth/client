@@ -9,12 +9,19 @@ using UnityEngine;
 public class ServerInterface : Singleton<ServerInterface>
 {
     // TODO: handle ws/wss encryption?
-    private readonly string server_address = "ws://4.tcp.ngrok.io:12862/join_game";
+    private readonly string server_address = "ws://2.tcp.ngrok.io:15248/join_game";
 
     public ClientWebSocket raw_socket;
+    public WebSocket socket;
 
     // Process any updates from the server <3    
-    public void Start() => ReadWebsocket();
+    //public async void FixedUpdate() {
+    //    await ReadWebsocket();
+    //}
+
+    public void Start()
+    {
+    }
 
     #region Public API methods for the game to interact with the server
     public async Task SendClientState(int player_id, float x, float y, float z)
@@ -44,7 +51,7 @@ public class ServerInterface : Singleton<ServerInterface>
         }
     }
 
-    private async void ReadWebsocket()
+    private async Task ReadWebsocket()
     {
         // If we don't have an open socket, open one (or maybe error?)
         if (raw_socket == null || raw_socket.State != WebSocketState.Open)
@@ -52,7 +59,7 @@ public class ServerInterface : Singleton<ServerInterface>
 
         try
         {
-            while (raw_socket.State == WebSocketState.Open)
+            if (raw_socket.State == WebSocketState.Open)
             {
                 Debug.Log("Websocket is still open :)");
 
@@ -76,6 +83,9 @@ public class ServerInterface : Singleton<ServerInterface>
                     var full_message = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, result.Count);
                     ServerUpdateListener.Instance.ProcessNewMessage(full_message);
                 }
+            } else
+            {
+                Debug.Log("Websocket is closed :(");
             }
         }
         catch (InvalidOperationException)
