@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 
 public class ServerInterface : Singleton<ServerInterface>
 {
-    private readonly string server_address = "ws://2.tcp.ngrok.io:16769/join_game";
+    // private readonly string server_address = "ws://2.tcp.ngrok.io:16769/join_game";
+    private readonly string server_address = "ws://127.0.0.1:12345/join_game";
 
     public WebSocket web_socket;
     public LogLevel socket_loglevel = LogLevel.Trace;
@@ -59,7 +60,7 @@ public class ServerInterface : Singleton<ServerInterface>
     }
 
     #region Public API methods for the game to interact with the server
-    public void SendPlayerState(int player_id, Vector3 position, Vector3 rotation)
+    public void SendPlayerState(int player_id, Vector3 position, Quaternion rotation)
     {
         if (web_socket == null)
             SetUpWebsocket();
@@ -68,14 +69,20 @@ public class ServerInterface : Singleton<ServerInterface>
         {
             ClientPlayerStateUpdate player_state = new ClientPlayerStateUpdate();
             player_state.player_id = player_id;
-            player_state.player_position = position;
-            player_state.player_rotation = rotation;
+
+            player_state.player = new NetworkEntityRepresentations.Player();
+            player_state.player.id = player_id; // dupe (not used yet)
+            player_state.player.position = position;
+            player_state.player.rotation = rotation;
+
+            player_state.mine_id = 0;
 
             string json_state = JsonUtility.ToJson(player_state);
             web_socket.Send(json_state);
         }
     }
     
+    // deprecated
     public void SendClientState(int player_id, float x, float y, float z)
     {
         if (web_socket == null)

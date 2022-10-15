@@ -46,18 +46,18 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
     // game_state into our current game state
     public void BlendGameState(ServerGameState game_state)
     {
-        foreach (ServerPlayerData player_data in game_state.characters)
-        {
-            int player_id = player_data.player_id;
-            if (player_id != local_player_id)
-                UpdateNearbyPlayer(FindOrCreateOtherPlayerById(player_id), player_data);
-        }
+        foreach (var player_data in game_state.characters)
+            if (player_data.id != local_player_id)
+            {
+                Debug.Log($"Updating player={player_data.id} (local={local_player_id})");
+                UpdateNearbyPlayer(FindOrCreateOtherPlayerById(player_data.id), player_data);
+            }
 
         // Update nearby objects
-        foreach (ServerOreData ore_data in game_state.ore)
+        foreach (var ore_data in game_state.ore)
         {
             GameObject ore = FindOrCreateObjectById(ore_data.ore_id, ore_prefab);
-            UpdateObjectPosition(ore, ore_data.position);
+            UpdateObjectPosition(ore, ore_data.position, ore_data.rotation);
         }
     }
 
@@ -96,14 +96,15 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
     #endregion
 
     #region Update Actions
-    private void UpdateNearbyPlayer(GameObject target, ServerPlayerData data)
+    private void UpdateNearbyPlayer(GameObject target, NetworkEntityRepresentations.Player data)
     {
-        UpdateObjectPosition(target, data.position);
+        UpdateObjectPosition(target, data.position, data.rotation);
     }
 
-    private void UpdateObjectPosition(GameObject target, Vector3 position)
+    private void UpdateObjectPosition(GameObject target, Vector3 position, Quaternion rotation)
     {
         target.transform.position = position;
+        target.transform.rotation = rotation;
 
         // This is probably a mild performance hit, but should work fine until we hit
         // a bigger scale. At that point, maybe we'll have a better solution. :)

@@ -7,11 +7,6 @@ public class ServerPositionReporter : MonoBehaviour
 
     public int player_id = 0;
 
-    private void Start()
-    {
-        player_id = 1;
-    }
-
     void FixedUpdate()
     {
         if (time_until_next_update <= 0f)
@@ -26,9 +21,6 @@ public class ServerPositionReporter : MonoBehaviour
         time_until_next_update = update_frequency;
 
         // Debug.Log("Broadcasting position update to server");
-        ServerInterface.Instance.SendClientState(
-            player_id,
-            transform.position.x, transform.position.y, transform.position.z
-        );
+        ServerInterface.Instance.SendPlayerState(player_id, transform.position, transform.rotation);
     }
 }

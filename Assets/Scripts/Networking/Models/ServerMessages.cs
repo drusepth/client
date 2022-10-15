@@ -24,8 +24,10 @@ namespace ClientToServerMessages
     [System.Serializable] public class ClientPlayerStateUpdate
     {
         public int player_id = 0;
-        public Vector3 position;
-        public Vector3 rotation;
+        public Player player;
+
+        // Needed for now because the server is still expecting it :)
+        public int mine_id;
     }
 
     [System.Serializable] public class PlayerStartInteraction
@@ -43,9 +45,10 @@ namespace NetworkEntityRepresentations
 {
     [System.Serializable] public class Player
     {
-        public int player_id;
+        public int id;
         public Vector3 position;
-        public Inventory inventory;
+        public Quaternion rotation;
+        // public Inventory inventory;
     }
 
     [System.Serializable] public class Ore
@@ -54,7 +57,7 @@ namespace NetworkEntityRepresentations
         public string ore_type;
         public int amount;
         public Vector3 position;
-        public Vector3 rotation;
+        public Quaternion rotation;
     }
 
     [System.Serializable] public class Inventory
