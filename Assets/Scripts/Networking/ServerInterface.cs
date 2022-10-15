@@ -1,4 +1,4 @@
-using ServerMessages;
+using ClientToServerMessages;
 using WebSocketSharp;
 using UnityEngine;
 using System.Collections.Concurrent;
@@ -35,21 +35,17 @@ public class ServerInterface : Singleton<ServerInterface>
             }
             else
             {
-                Debug.Log("got game message");
-                Debug.Log(e.Data);
+                // We don't want to actually process the message because we're in a separate,
+                // non-Unity thread here. Instead, we'll add it to a queue that the main thread
+                // can read from and process.
                 incoming_server_messages.Enqueue(e.Data);
-                Debug.Log(incoming_server_messages.Count + " messages to process");
-                // ServerSyncManager.Instance.ProcessServerMessage(e.Data);
-                Debug.Log("found singleton instance");
             }
         };
 
-        /*
         web_socket.OnError += (sender, e) =>
         {
             Debug.Log($"#{e.Exception} error received from server: {e.Message}");
         };
-        */
 
         web_socket.OnClose += (sender, e) =>
         {
@@ -63,6 +59,23 @@ public class ServerInterface : Singleton<ServerInterface>
     }
 
     #region Public API methods for the game to interact with the server
+    public void SendPlayerState(int player_id, Vector3 position, Vector3 rotation)
+    {
+        if (web_socket == null)
+            SetUpWebsocket();
+
+        if (web_socket.ReadyState == WebSocketState.Open)
+        {
+            ClientPlayerStateUpdate player_state = new ClientPlayerStateUpdate();
+            player_state.player_id = player_id;
+            player_state.player_position = position;
+            player_state.player_rotation = rotation;
+
+            string json_state = JsonUtility.ToJson(player_state);
+            web_socket.Send(json_state);
+        }
+    }
+    
     public void SendClientState(int player_id, float x, float y, float z)
     {
         if (web_socket == null)
@@ -80,7 +93,6 @@ public class ServerInterface : Singleton<ServerInterface>
             string json_state = JsonUtility.ToJson(state);
             // TODO we should probably switch to SendAsync since we don't need an ACK here
             web_socket.Send(json_state);
-            Debug.Log("game state sent successfully!");
         }
         else
         {

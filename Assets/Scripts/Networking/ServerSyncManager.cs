@@ -1,4 +1,4 @@
-using ServerMessages;
+using ServerToClientMessages;
 using System.Collections.Concurrent;
 using System.Threading;
 using UnityEngine;
@@ -21,24 +21,12 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
 
     public void FixedUpdate()
     {
-        /*
-        if (should_blend_server_state)
-        {
-            // should_blend_server_state = false;
-            BlendGameState(latest_server_state_to_blend);
-        }
-        */
-
-        // Process any messages from the server
-        string server_message;
-        if (ServerInterface.Instance.incoming_server_messages.TryDequeue(out server_message))
+        if (ServerInterface.Instance.incoming_server_messages.TryDequeue(out string server_message))
             ProcessServerMessage(server_message);
     }
 
     public void ProcessServerMessage(string full_message)
     {
-        Debug.Log("processing server message");
-
         // TODO we probably want to logic branch here on message_type:
         // * authentication response
         // * game state blend updates
@@ -116,6 +104,13 @@ public class ServerSyncManager : Singleton<ServerSyncManager>
     private void UpdateObjectPosition(GameObject target, Vector3 position)
     {
         target.transform.position = position;
+
+        // This is probably a mild performance hit, but should work fine until we hit
+        // a bigger scale. At that point, maybe we'll have a better solution. :)
+        if (target.TryGetComponent(out Rigidbody body))
+        {
+            body.velocity = Vector3.zero;
+        }
     }
     #endregion
 }
